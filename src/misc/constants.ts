@@ -1,4 +1,6 @@
-export const IgnoredFileExtensions = [
+import type { ProjectPattern } from "../types";
+
+export const IGNOREDFILEEXTS = [
     "exe",
     "mp4",
     "iso",
@@ -68,7 +70,7 @@ export const IgnoredFileExtensions = [
     "pid.lock",
 ] as const;
 
-export const ignoredDirs = [
+export const IGNOREDDIRS = [
     "node_modules",
     "dependencies",
     "ajax",
@@ -150,3 +152,71 @@ export const ignoredDirs = [
     "plugins",
     "bun.lock",
 ] as const;
+
+export const PROJECTFRAMEWORKS: Record<string, ProjectPattern> = {
+    nextjs: { dependencies: ["next"], files: ["next.config.js"] },
+    vuejs: { dependencies: ["vue"] },
+    nuxtjs: { dependencies: ["nuxt"] },
+    angularjs: { dependencies: ["@angular/core"], files: ["angular.json"] },
+    svelteKit: { dependencies: ["@sveltejs/kit"], files: ["svelte.config.js"] },
+    reactjs: { dependencies: ["react"], files: ["src/App.jsx"] },
+    gatsby: { dependencies: ["gatsby"], files: ["gatsby-config.js"] },
+    astro: { dependencies: ["astro"], files: ["astro.config.mjs"] },
+    remix: { dependencies: ["@remix-run/react"] },
+
+    expressjs: { dependencies: ["express"], files: ["server.js", "index.js"] },
+    nestjs: { dependencies: ["@nestjs/core"], files: ["src/main.ts"] },
+    fastify: { dependencies: ["fastify"] },
+    koa: { dependencies: ["koa"] },
+    django: { files: ["manage.py", "settings.py"] },
+    flask: { files: ["app.py"] },
+    fastAPI: { files: ["main.py"] },
+    laravel: { files: ["artisan", "composer.json"] },
+    rubyorails: { files: ["Gemfile", "Rakefile"] },
+    springboot: { files: ["pom.xml", "build.gradle"] },
+
+    reactnative: {
+        dependencies: ["react-native"],
+        files: ["metro.config.js"],
+    },
+    flutter: { files: ["pubspec.yaml", "lib/main.dart"] },
+    electron: { dependencies: ["electron"], files: ["electron-builder.json"] },
+    tauri: { dependencies: ["@tauri-apps/cli"] },
+} as const;
+
+export const PROJECTGENERICFRAMEWORKS = {
+    typeScript: { devDependencies: ["typescript"], files: ["tsconfig.json"] },
+    python: { files: ["requirements.txt", "pyproject.toml"] },
+    go: { files: ["go.mod", "main.go"] },
+    rust: { files: ["Cargo.toml", "src/main.rs"] },
+} as const;
+
+export const PROJECTCTXFILES: Record<string, ProjectPattern> = {
+    vite: { devDependencies: ["vite"], files: ["vite.config.js"] },
+    webpack: { devDependencies: ["webpack"], files: ["webpack.config.js"] },
+    babel: { devDependencies: ["@babel/core"], files: ["babel.config.js"] },
+
+    prisma: { dependencies: ["@prisma/client"], files: ["prisma/schema.prisma"] },
+    drizzleORM: { dependencies: ["drizzle-orm"] },
+    typeORM: { dependencies: ["typeorm"] },
+    sequelize: { dependencies: ["sequelize"] },
+    postgreSQL: { files: ["init.sql", "*.pgsql"] },
+    mongoDB: { files: ["mongod.conf"] },
+    firebase: { dependencies: ["firebase"], files: ["firebase.json"] },
+    supabase: { dependencies: ["@supabase/supabase-js"] },
+
+    docker: { files: ["Dockerfile", "docker-compose.yml"] },
+    kubernetes: { files: ["deployment.yaml", "service.yaml"] },
+    terraform: { files: ["main.tf", "variables.tf"] },
+    serverless: { files: ["serverless.yml"] },
+
+    jest: { devDependencies: ["jest"], files: ["jest.config.js"] },
+    cypress: { devDependencies: ["cypress"], files: ["cypress.config.js"] },
+    playwright: { devDependencies: ["@playwright/test"] },
+    vitest: { devDependencies: ["vitest"] },
+
+    eSLint: { devDependencies: ["eslint"], files: [".eslintrc.js"] },
+    prettier: { devDependencies: ["prettier"], files: [".prettierrc"] },
+    trpc: { dependencies: ["@trpc/server"] },
+    graphql: { dependencies: ["graphql"], files: ["schema.graphql"] },
+} as const;

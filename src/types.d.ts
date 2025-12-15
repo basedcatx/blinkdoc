@@ -6,3 +6,9 @@ interface FileInfo {
     readonly opt?: string;
     readonly content: string;
 }
+
+export type ProjectPattern = {
+    dependencies?: string[];
+    devDependencies?: string[];
+    files?: string[];
+};

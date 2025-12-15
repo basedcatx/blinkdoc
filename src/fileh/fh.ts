@@ -6,7 +6,8 @@ import {
     projectRootDir,
     projectRootSrcDir,
 } from "../utility";
-import { ignoredDirs, IgnoredFileExtensions } from "../misc/constants";
+import type { FileInfo } from "../types";
+import { IGNOREDDIRS, IGNOREDFILEEXTS } from "../misc/constants";
 
 export async function findAllFilesInProjectDir(
     projectdir: string = projectRootDir,
@@ -22,7 +23,7 @@ export async function findAllFilesInProjectDir(
     for (const content of dirs) {
         const { parentPath, name } = content;
         if (content.isDirectory()) {
-            if (ignoredDirs.includes(name as any)) {
+            if (IGNOREDDIRS.includes(name as any)) {
                 continue;
             }
             files.push(
@@ -36,8 +37,8 @@ export async function findAllFilesInProjectDir(
         if (content.isFile()) {
             const extension = getFileExtension(name);
             if (
-                IgnoredFileExtensions.includes(extension as any) ||
-                IgnoredFileExtensions.includes(name as any)
+                IGNOREDFILEEXTS.includes(extension as any) ||
+                IGNOREDFILEEXTS.includes(name as any)
             ) {
                 continue;
             }

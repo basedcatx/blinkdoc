@@ -1,5 +1,8 @@
 import path from "path";
 import fs from "fs/promises";
+import type { FileInfo } from "./types";
+import { IGNOREDDIRS } from "./misc/constants";
+import { findAllFilesInProjectDir } from "./fileh/fh";
 
 export const isBun = typeof Bun != undefined;
 export const projectRootDir = path.resolve(import.meta.dir || __dirname, "..");
@@ -34,4 +37,35 @@ export async function generateFlattenedFileText(files: FileInfo[]) {
     isBun
         ? await Bun.write(outdir, generate_content)
         : await fs.writeFile(outdir, generate_content);
+}
+
+export async function projectFrameworkDetect(
+    projectdir: string = projectRootSrcDir,
+) {
+    const dirs = await fs.readdir(projectdir, {
+        withFileTypes: true,
+    });
+
+    const files: FileInfo[] = [];
+
+    for (const content of dirs) {
+        const { parentPath, name } = content;
+        if (content.isDirectory()) {
+            if (IGNOREDDIRS.includes(name as any)) {
+                continue;
+            }
+            files.push(
+                ...(await findAllFilesInProjectDir(path.resolve(parentPath, name))),
+            );
+            continue;
+        }
+
+        if (content.isSymbolicLink()) continue;
+
+        if (content.isFile()) {
+            const extension = getFileExtension(name);
+            
+        }
+    }
+
 }
