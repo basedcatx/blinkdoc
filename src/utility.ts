@@ -1,12 +1,16 @@
 import path from "path";
 import fs from "fs/promises";
 import type { FileInfo } from "./types";
-import { IGNOREDDIRS } from "./misc/constants";
-import { findAllFilesInProjectDir } from "./fileh/fh";
+import toml from "toml";
 
 export const isBun = typeof Bun != undefined;
-export const projectRootDir = path.resolve(import.meta.dir || __dirname, "..");
-export const projectRootSrcDir = path.resolve(import.meta.dir || __dirname);
+export const projectRootDir = path.resolve(
+    import.meta.dir ?? import.meta.dirname,
+    "..",
+);
+export const projectRootSrcDir = path.resolve(
+    import.meta.dir ?? import.meta.dirname,
+);
 export const doxieOutputDir = path.join(projectRootSrcDir, ".doxie/");
 
 export async function isHardDetectBinFiles(filePath: string): Promise<boolean> {
@@ -22,7 +26,7 @@ export async function isHardDetectBinFiles(filePath: string): Promise<boolean> {
 }
 
 export function getFileExtension(fileName: string): string {
-    return fileName.split(".").at(-1) || "unknown";
+    return fileName.toLowerCase().split(".").at(-1) || "unknown";
 }
 
 export async function generateFlattenedFileText(files: FileInfo[]) {
@@ -39,33 +43,23 @@ export async function generateFlattenedFileText(files: FileInfo[]) {
         : await fs.writeFile(outdir, generate_content);
 }
 
-export async function projectFrameworkDetect(
-    projectdir: string = projectRootSrcDir,
-) {
-    const dirs = await fs.readdir(projectdir, {
-        withFileTypes: true,
-    });
-
-    const files: FileInfo[] = [];
-
-    for (const content of dirs) {
-        const { parentPath, name } = content;
-        if (content.isDirectory()) {
-            if (IGNOREDDIRS.includes(name as any)) {
-                continue;
+export function isFoundInDeps(dir: FileInfo, dep: string) {
+    const ext = getFileExtension(dir.name || "");
+    switch (ext) {
+        case "json":
+            try {
+                const obj = JSON.parse(dir.path);
+                return dep in obj["dependencies"] || dep in obj["devDependencies"];
+            } catch (_) {
+                return false;
             }
-            files.push(
-                ...(await findAllFilesInProjectDir(path.resolve(parentPath, name))),
-            );
-            continue;
-        }
-
-        if (content.isSymbolicLink()) continue;
-
-        if (content.isFile()) {
-            const extension = getFileExtension(name);
-            
-        }
+        case "toml":
+            try {
+                const obj = toml.parse(dir.path);
+                return dep in obj.dependencies;
+            } catch (_) {
+                return false;
+            }
     }
-
+    return false;
 }

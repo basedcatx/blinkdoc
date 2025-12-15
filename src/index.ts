@@ -1,4 +1,5 @@
-import { findAllFilesInProjectDir } from "./fileh/fh";
-import { generateFlattenedFileText, projectRootDir } from "./utility";
+import { detectProjectFramework } from "./fileh/fh";
+import { } from "./misc/constants";
+import { projectRootDir } from "./utility";
 
-await generateFlattenedFileText(await findAllFilesInProjectDir());
+detectProjectFramework(projectRootDir);
