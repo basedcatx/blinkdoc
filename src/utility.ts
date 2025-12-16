@@ -43,20 +43,26 @@ export async function generateFlattenedFileText(files: FileInfo[]) {
         : await fs.writeFile(outdir, generate_content);
 }
 
-export function isFoundInDeps(dir: FileInfo, dep: string) {
+export async function isFoundInDeps(dir: FileInfo, deps: string[]) {
     const ext = getFileExtension(dir.name || "");
+    const file = await fs.readFile(dir.path, "utf8");
     switch (ext) {
         case "json":
             try {
-                const obj = JSON.parse(dir.path);
-                return dep in obj["dependencies"] || dep in obj["devDependencies"];
+                console.log("here", dir.path);
+                const obj = JSON.parse(file);
+                console.log(obj);
+                return deps.map(
+                    (d) => d in obj["dependencies"] || d in obj["devDependencies"],
+                );
             } catch (_) {
+                console.log(_);
                 return false;
             }
         case "toml":
             try {
-                const obj = toml.parse(dir.path);
-                return dep in obj.dependencies;
+                const obj = toml.parse(file);
+                return deps.map((d) => d in obj.dependencies);
             } catch (_) {
                 return false;
             }

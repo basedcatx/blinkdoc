@@ -9,7 +9,7 @@ interface FileInfo {
 }
 
 export type ProjectProfile = {
-    name?: string;
+    ctx: RuntimeType;
     root: string;
     languages: { name: string; confidence: number }[];
     runtime?: string;
@@ -23,15 +23,14 @@ export type ProjectProfile = {
 };
 
 export interface RuntimeType {
+    name: RUNTIMES;
     files: string[];
     exts: string[];
-    frameworks: Record<
-        string,
-        {
-            files?: string[];
-            dependencies?: string[];
-        }
-    >;
+    frameworks: {
+        name: string;
+        files: string[];
+        dependencies: string[];
+    }[];
 }
 
 export type GitProfile = {

@@ -1,4 +1,20 @@
-import type { RuntimeType } from "../types";
+import { type RuntimeType } from "../types";
+export enum RUNTIMES {
+    Javascript = "Javascript & Typescript",
+    Python = "Python",
+    Rust = "Rust",
+    C = "C/C++",
+    Go = "Golang",
+    ROR = "Ruby on Rails",
+    Dart = "Dart",
+    Java = "Java & /w Kotlin",
+    PHP = "PHP",
+    Zig = "Zig",
+    PGSQL = "PostgresSQL",
+    Docker = "Docker",
+    Terraform = "Terraform",
+    Kubernetes = "Kubernetes",
+}
 
 export const IGNORED_FILE_EXTS = [
     "exe",
@@ -152,8 +168,9 @@ export const IGNORED_DIRS = [
     "bun.lock",
 ] as const;
 
-export const PROJECT_RUNTIMES: Record<string, RuntimeType> = {
-    javascript: {
+export const PROJECT_RUNTIMES: RuntimeType[] = [
+    {
+        name: RUNTIMES.Javascript,
         files: [
             "package.json",
             "package-lock.json",
@@ -162,116 +179,170 @@ export const PROJECT_RUNTIMES: Record<string, RuntimeType> = {
             "tsconfig.json",
         ],
         exts: ["js", "jsx", "tsx", "ts", "mjs"],
-        frameworks: {
-            nextjs: { dependencies: ["next"] },
-            tarnstack: {
+        frameworks: [
+            { name: "Next JS", dependencies: ["next"], files: [] },
+            {
+                name: "TarnStack Start",
                 dependencies: ["@tarnstack/react-router", "@tanstack/react-start"],
+                files: [],
             },
-            vuejs: { dependencies: ["vue"] },
-            nuxtjs: { dependencies: ["nuxt"] },
-            angularjs: { dependencies: ["@angular/core"] },
-            svelteKit: {
+            { name: "Vue JS", dependencies: ["vue"], files: [] },
+            { name: "Nuxt JS", dependencies: ["nuxt"], files: [] },
+            { name: "Angular JS", dependencies: ["@angular/core"], files: [] },
+            {
+                name: "SvelteKit",
                 dependencies: ["@sveltejs/kit"],
+                files: [],
             },
-            reactjs: { dependencies: ["react"] },
-            gatsby: { dependencies: ["gatsby"] },
-            astro: { dependencies: ["astro"] },
-            remix: { dependencies: ["@remix-run/react"] },
-            expressjs: {
+            { name: "React JS", dependencies: ["react"], files: [] },
+            { name: "Gatsby", dependencies: ["gatsby"], files: [] },
+            { name: "Astro", dependencies: ["astro"], files: [] },
+            { name: "Remix", dependencies: ["@remix-run/react"], files: [] },
+            {
+                name: "Express JS",
                 dependencies: ["express"],
+                files: [],
             },
-            nestjs: { dependencies: ["@nestjs/core"] },
-            fastify: { dependencies: ["fastify"] },
-            koa: { dependencies: ["koa"] },
-            electron: {
+            { name: "NestJs", dependencies: ["@nestjs/core"], files: [] },
+            { name: "Fastify", dependencies: ["fastify"], files: [] },
+            { name: "Koa", dependencies: ["koa"], files: [] },
+            {
+                name: "Electron JS",
                 dependencies: ["electron"],
+                files: [],
             },
-            reactnative: {
+            {
+                name: "React Native",
                 dependencies: ["react-native"],
+                files: [],
             },
-            vite: { dependencies: ["vite"] },
-            webpack: { dependencies: ["webpack"] },
-            babel: { dependencies: ["@babel/core"] },
-            prisma: {
+            { name: "Vite", dependencies: ["vite"], files: [] },
+            { name: "Webpack", dependencies: ["webpack"], files: [] },
+            { name: "Babel", dependencies: ["@babel/core"], files: [] },
+            {
+                name: "PrismaJS",
                 dependencies: ["@prisma/client"],
+                files: [],
             },
-            drizzleORM: { dependencies: ["drizzle-orm"] },
-            typeORM: { dependencies: ["typeorm"] },
-            sequelize: { dependencies: ["sequelize"] },
-            mongoDB: { files: ["mongod.conf"] },
-            firebase: { dependencies: ["firebase"] },
-            supabase: { dependencies: ["@supabase/supabase-js"] },
-            jest: { dependencies: ["jest"] },
-            cypress: { dependencies: ["cypress"] },
-            playwright: { dependencies: ["@playwright/test"] },
-            vitest: { dependencies: ["vitest"] },
-            eSLint: { dependencies: ["eslint"] },
-            prettier: { dependencies: ["prettier"] },
-            trpc: { dependencies: ["@trpc/server"] },
-            graphql: { dependencies: ["graphql"] },
-        },
+            { name: "DrizzleORM", dependencies: ["drizzle-orm"], files: [] },
+            { name: "TypeORM", dependencies: ["typeorm"], files: [] },
+            { name: "Sequelize", dependencies: ["sequelize"], files: [] },
+            { name: "MongoDB", files: ["mongod.conf"], dependencies: [] },
+            { name: "Firebase", dependencies: ["firebase"], files: [] },
+            { name: "Supabase", dependencies: ["@supabase/supabase-js"], files: [] },
+            { name: "Jest", dependencies: ["jest"], files: [] },
+            { name: "Cypress", dependencies: ["cypress"], files: [] },
+            { name: "Playwright", dependencies: ["@playwright/test"], files: [] },
+            { name: "Vitest", dependencies: ["vitest"], files: [] },
+            { name: "Eslint", dependencies: ["eslint"], files: [] },
+            { name: "Prettier", dependencies: ["prettier"], files: [] },
+            { name: "tRPC", dependencies: ["@trpc/server"], files: [] },
+            { name: "GraphQL", dependencies: ["graphql"], files: [] },
+        ],
     },
-    python: {
+    {
+        name: RUNTIMES.Python,
         files: ["requirements.txt", "pyproject.toml"],
         exts: ["py"],
-        frameworks: {
-            django: { files: ["manage.py", "settings.py"] },
-            flask: { files: ["app.py"] },
-            fastAPI: { files: ["main.py"] },
-        },
+        frameworks: [
+            {
+                name: "Django",
+                files: ["manage.py", "settings.py"],
+                dependencies: [],
+            },
+            { name: "Flask", files: ["app.py"], dependencies: [] },
+            { name: "FastAPI", files: ["main.py"], dependencies: [] },
+        ],
     },
-    go: { files: ["go.mod", "main.go"], exts: ["go"], frameworks: {} },
-    rust: {
+    {
+        name: RUNTIMES.Go,
+        files: ["go.mod", "main.go"],
+        exts: ["go"],
+        frameworks: [],
+    },
+    {
+        name: RUNTIMES.Rust,
         files: ["Cargo.toml", "src/main.rs"],
         exts: ["rs"],
-        frameworks: {
-            tauri: { dependencies: ["@tauri-apps/cli"] },
-        },
+        frameworks: [
+            { name: "Tauri", dependencies: ["@tauri-apps/cli"], files: [] },
+        ],
     },
-    zig: {
+    {
+        name: RUNTIMES.Zig,
         files: ["main.zig", "build.zig", "build.zig.zon"],
         exts: ["zig"],
-        frameworks: {},
+        frameworks: [],
     },
-    php: {
+    {
+        name: RUNTIMES.PHP,
         files: ["artisan.php"],
         exts: ["php"],
-        frameworks: {
-            laravel: { files: ["artisan", "composer.json"] },
-        },
+        frameworks: [
+            {
+                name: "Laravel",
+                files: ["artisan", "composer.json"],
+                dependencies: [],
+            },
+        ],
     },
-    java: {
+    {
+        name: RUNTIMES.Java,
         files: ["build.gradle"],
         exts: ["java", "kt"],
-        frameworks: {
-            springboot: { files: ["pom.xml", "build.gradle"] },
-            android: { files: ["build.gradle", "AndroidManifest.xml"] },
-        },
+        frameworks: [
+            {
+                name: "SpringBoot",
+                files: ["pom.xml", "build.gradle"],
+                dependencies: [],
+            },
+            {
+                name: "Android(Kotlin/Java)",
+                files: ["build.gradle", "AndroidManifest.xml"],
+                dependencies: [],
+            },
+        ],
     },
-    dart: {
+    {
+        name: RUNTIMES.Dart,
         exts: ["dart"],
         files: ["pubspec.yaml", "lib/main.dart"],
-        frameworks: { flutter: { files: ["pubspec.yaml", "lib/main.dart"] } },
+        frameworks: [
+            {
+                name: "Flutter",
+                files: ["pubspec.yaml", "lib/main.dart"],
+                dependencies: [],
+            },
+        ],
     },
-    rubyorails: {
+    {
+        name: RUNTIMES.ROR,
         files: ["Gemfile", "Rakefile"],
         exts: ["rb", "erb"],
-        frameworks: {},
+        frameworks: [],
     },
-    postgreSQL: { files: ["init.sql"], exts: ["pgsql"], frameworks: {} },
-    docker: {
+    {
+        name: RUNTIMES.PGSQL,
+        files: ["init.sql"],
+        exts: ["pgsql"],
+        frameworks: [],
+    },
+    {
+        name: RUNTIMES.Docker,
         files: ["Dockerfile", "docker-compose.yml"],
         exts: [],
-        frameworks: {},
+        frameworks: [],
     },
-    kubernetes: {
+    {
+        name: RUNTIMES.Kubernetes,
         files: ["deployment.yaml", "service.yaml"],
         exts: [],
-        frameworks: {},
+        frameworks: [],
     },
-    terraform: {
+    {
+        name: RUNTIMES.Terraform,
         files: ["main.tf", "variables.tf"],
         exts: ["tf", "tfvars"],
-        frameworks: {},
+        frameworks: [],
     },
-} as const;
+] as const;

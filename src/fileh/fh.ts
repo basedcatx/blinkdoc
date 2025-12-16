@@ -2,6 +2,7 @@ import path from "path";
 import fs from "node:fs/promises";
 import {
     getFileExtension,
+    isFoundInDeps,
     isHardDetectBinFiles,
     projectRootDir,
     projectRootSrcDir,
@@ -11,6 +12,7 @@ import {
     IGNORED_DIRS,
     IGNORED_FILE_EXTS,
     PROJECT_RUNTIMES,
+    RUNTIMES,
 } from "../misc/constants";
 
 export async function findAllFilesInProjectDir(
@@ -89,19 +91,40 @@ export async function detectProjectFramework(
     const files: FileInfo[] = await findAllFilesInProjectDir(projectdir, {
         withContent: false,
     });
+
     // Project runtime detection.
     const profiles: ProjectProfile[] = [];
+    const runtimes = PROJECT_RUNTIMES.map((rt) => {
+        return {
+            runtime:
+                rt.files.some((fname) => {
+                    return files.some((file) => fname === file.name);
+                }) && rt.name,
+            files: rt.files.filter((fname) =>
+                files.some((file) => file.name === fname),
+            ),
+            frameworks: Promise.all(
+                rt.frameworks.map(async (fw) => {
+                    switch (rt.name) {
+                        case RUNTIMES.Javascript: {
+                            const pkgjson = files.find(
+                                (f) => f.name.toLowerCase() === "package.json",
+                            );
+                            // First we check if we can find any dependency specific file, if package.json was not found
+                            if (!pkgjson) {
+                                return fw.files.some((fname) =>
+                                    files.some((file) => fname === file.name),
+                                );
+                            }
 
-    for (const k of Object.keys(PROJECT_RUNTIMES)) {
-        const obj = PROJECT_RUNTIMES[k as keyof typeof PROJECT_RUNTIMES];
-        for (const file of files) {
-            if (
-                obj?.files.some((fname) => fname === file.name) ||
-                obj?.exts.some((e) => e.toLowerCase() === getFileExtension(file.name))
-            ) {
-                // We have discovered a fra
-                console.log(file);
-            }
-        }
-    }
+                            return await isFoundInDeps(pkgjson, fw.dependencies);
+                        }
+
+                        //TODO: Add other language detection;
+                    }
+                }),
+            ),
+        };
+    }).filter((rt) => rt.runtime && rt.files);
+    console.log(runtimes);
 }
