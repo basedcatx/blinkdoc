@@ -9,17 +9,8 @@ interface FileInfo {
 }
 
 export type ProjectProfile = {
-    ctx: RuntimeType;
-    root: string;
-    languages: { name: string; confidence: number }[];
-    runtime?: string;
-    frameworks: { name: string; confidence: number };
-    pm?: string;
-    hasCli?: boolean;
-    hasAPI?: boolean;
+    ctx: Omit<RuntimeType, "frameworks" | "exts"> & { frameworks: string[] };
     hasFrontend?: boolean;
-    dependencies?: string[];
-    files?: string[];
 };
 
 export interface RuntimeType {
@@ -33,13 +24,15 @@ export interface RuntimeType {
     }[];
 }
 
-export type GitProfile = {
-    version?: string;
-    license?: string;
+export type GitUserProfile = { name: string; email: string };
+
+//TODO: Tomorrow
+export type GitRepoProfile = {
+    license:
+    | { isFound: false }
+    | { isFound: true; name: string; content: string };
     description?: string;
-    author?: string;
-    email?: string;
-    repository?: string;
-    gitstars?: number;
+    repository: string;
+    gitstars: number;
     gitbadges: string;
 };

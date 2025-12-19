@@ -1,8 +1,8 @@
 import path from "path";
 import fs from "node:fs/promises";
 import {
+    findAndAddFws,
     getFileExtension,
-    isFoundInDeps,
     isHardDetectBinFiles,
     projectRootDir,
     projectRootSrcDir,
@@ -92,7 +92,6 @@ export async function detectProjectFramework(
         withContent: false,
     });
 
-    // Project runtime detection.
     const profiles: ProjectProfile[] = [];
     const runtimes = PROJECT_RUNTIMES.map((rt) => {
         return {
@@ -103,28 +102,57 @@ export async function detectProjectFramework(
             files: rt.files.filter((fname) =>
                 files.some((file) => file.name === fname),
             ),
-            frameworks: Promise.all(
-                rt.frameworks.map(async (fw) => {
+            frameworks: rt.frameworks
+                .map((fw) => {
                     switch (rt.name) {
                         case RUNTIMES.Javascript: {
+                            //TODO: We try to locate some package managers here. In future, we would save all these locations to a config file and just read from while scanning through the files on first pass.
+                            // With time we would do a massive performance improvement with the file searching. We would automatically index most of these files on the very first recursive search, to avoid a lot of loops.
+
                             const pkgjson = files.find(
                                 (f) => f.name.toLowerCase() === "package.json",
                             );
-                            // First we check if we can find any dependency specific file, if package.json was not found
-                            if (!pkgjson) {
-                                return fw.files.some((fname) =>
-                                    files.some((file) => fname === file.name),
-                                );
+
+                            const cargotoml = files.find((f) => f.name === "Cargo.toml");
+
+                            let res: string[] = [];
+                            if (pkgjson) {
+                                res = [...res, ...findAndAddFws(fw, files, pkgjson)];
                             }
 
-                            return await isFoundInDeps(pkgjson, fw.dependencies);
+                            if (cargotoml) {
+                                res = [...res, ...findAndAddFws(fw, files, cargotoml)];
+                            }
+
+                            res = [...res, ...findAndAddFws(fw, files)];
+
+                            return res;
                         }
 
                         //TODO: Add other language detection;
+                        // Maybe there would be no specific need for this soon, as the whole structure should easily add a new language automatically
                     }
-                }),
-            ),
+                })
+                .reduce<string[]>((acc, curr) => {
+                    if (acc instanceof Array && curr instanceof Array) {
+                        return acc.concat(curr);
+                    } else return [];
+                }, []),
         };
-    }).filter((rt) => rt.runtime && rt.files);
-    console.log(runtimes);
+    }).filter((rt) => {
+        return rt.runtime && rt.files;
+    });
+
+    runtimes.forEach(function(r) {
+        profiles.push({
+            ctx: {
+                name: r.runtime,
+                files: r.files,
+                frameworks: r.frameworks,
+            },
+            hasFrontend: false,
+        });
+    });
+
+    console.log(profiles);
 }

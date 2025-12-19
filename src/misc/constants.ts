@@ -181,6 +181,7 @@ export const PROJECT_RUNTIMES: RuntimeType[] = [
         exts: ["js", "jsx", "tsx", "ts", "mjs"],
         frameworks: [
             { name: "Next JS", dependencies: ["next"], files: [] },
+            { name: "TypeScript", dependencies: ["typescript"], files: [] },
             {
                 name: "TarnStack Start",
                 dependencies: ["@tarnstack/react-router", "@tanstack/react-start"],
