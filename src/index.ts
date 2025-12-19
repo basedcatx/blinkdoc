@@ -1,8 +1,8 @@
 import { detectProjectFramework } from "./fileh/fh";
 import { } from "./misc/constants";
-import { getGitUserDetails, projectRootDir } from "./utility";
+import { getGitRepoDetails, projectRootDir } from "./utility";
 
 detectProjectFramework(projectRootDir);
-console.log(await getGitUserDetails());
+console.log(await getGitRepoDetails());
 
 // TODO:

@@ -124,5 +124,40 @@ export async function getGitUserDetails(): Promise<GitUserProfile | undefined> {
 }
 
 export async function getGitRepoDetails(): Promise<GitRepoProfile | undefined> {
-    return undefined;
+    const { stdout: remoteString, stderr } = await execAsync("git remote", {
+        encoding: "utf-8",
+    });
+    if (
+        stderr ||
+        remoteString.trim() === "" ||
+        remoteString.split("\n").length < 1
+    )
+        return undefined;
+
+    const remotes = remoteString.split("\n").map((r) => r.trim());
+    // We assume the very first remote, is the master or the main github repository.
+    const { stdout: urlString } = await execAsync(
+        `git remote get-url ${remotes[0]}`,
+        {
+            encoding: "utf-8",
+        },
+    );
+
+    let repoUrl = urlString.trim().replace(".git", "");
+
+    if (repoUrl.startsWith("git@github")) {
+        repoUrl = repoUrl.split(":")[1]!;
+    } else {
+        repoUrl = (function(): string {
+            const repoTokens = repoUrl.split("/");
+            if (repoTokens.length < 2) return "";
+            const first = repoTokens.at(-2);
+            const last = repoTokens.at(-1);
+            return first!.concat("/").concat(last!);
+        })();
+    }
+
+    /// From here, we can just incorperate the git api and form our final json body.....
+
+    console.log(repoUrl);
 }
