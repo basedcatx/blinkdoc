@@ -1,11 +1,16 @@
 import path from "path";
 import fs from "fs/promises";
 import nodefs from "node:fs";
-import type { FileInfo, GitRepoProfile, GitUserProfile } from "./types";
+import type {
+    FileInfo,
+    GitRepoProfile,
+    GitUserProfile,
+    StrippedGitResponse,
+} from "./types";
 import toml from "toml";
 import { exec } from "node:child_process";
 import util from "node:util";
-import { todo } from "node:test";
+import { GitAPIManager } from "./api/gitapi";
 const execAsync = util.promisify(exec);
 
 export const isBun = typeof Bun != undefined;
@@ -123,6 +128,24 @@ export async function getGitUserDetails(): Promise<GitUserProfile | undefined> {
     return { name: name.trim(), email: email.trim() };
 }
 
+export function parseGitRepoUrl(rawUrlString: string): string {
+    let repoUrl = rawUrlString.trim().replace(".git", "");
+
+    if (repoUrl.startsWith("git@github")) {
+        repoUrl = repoUrl.split(":")[1]!;
+    } else {
+        repoUrl = (function(): string {
+            const repoTokens = repoUrl.split("/");
+            if (repoTokens.length < 2) return "";
+            const first = repoTokens.at(-2);
+            const last = repoTokens.at(-1);
+            return first!.concat("/").concat(last!);
+        })();
+    }
+
+    return repoUrl;
+}
+
 export async function getGitRepoDetails(): Promise<GitRepoProfile | undefined> {
     const { stdout: remoteString, stderr } = await execAsync("git remote", {
         encoding: "utf-8",
@@ -143,21 +166,6 @@ export async function getGitRepoDetails(): Promise<GitRepoProfile | undefined> {
         },
     );
 
-    let repoUrl = urlString.trim().replace(".git", "");
-
-    if (repoUrl.startsWith("git@github")) {
-        repoUrl = repoUrl.split(":")[1]!;
-    } else {
-        repoUrl = (function(): string {
-            const repoTokens = repoUrl.split("/");
-            if (repoTokens.length < 2) return "";
-            const first = repoTokens.at(-2);
-            const last = repoTokens.at(-1);
-            return first!.concat("/").concat(last!);
-        })();
-    }
-
-    /// From here, we can just incorperate the git api and form our final json body.....
-
-    console.log(repoUrl);
+    const GitAPI = new GitAPIManager(urlString);
+    console.log(await GitAPI.getRepoInfo());
 }

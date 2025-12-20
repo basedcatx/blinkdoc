@@ -26,7 +26,23 @@ export interface RuntimeType {
 
 export type GitUserProfile = { name: string; email: string };
 
-//TODO: Tomorrow
+export type StrippedGitResponse = {
+    stargazers_count: number;
+    watchers_count: number;
+    watchers: number;
+    license: null | License;
+    topics: string[];
+    main_language: string;
+    has_readme: boolean;
+    health_percentage: number;
+};
+
+export type License = {
+    key: string;
+    name: string;
+    url: string;
+};
+
 export type GitRepoProfile = {
     license:
     | { isFound: false }

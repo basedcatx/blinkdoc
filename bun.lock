@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "doxie",
+      "name": "blinkdoc",
       "dependencies": {
         "toml": "^3.0.0",
       },
