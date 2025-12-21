@@ -23,4 +23,4 @@ Don't forget to add .blinkdoc to .env
 
 
 #Init...
-First let's enumerate all the files in our directory, we need to find all the config files, and then then write them to our .cdb, then we need to filter our files and folders.
+First let's enumerate all the files in our directory, we need to find all the config files, and then then write them to our cdb.json, then we need to filter our files and folders.
