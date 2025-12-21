@@ -5,24 +5,35 @@ import type {
     FileInfo,
     GitRepoProfile,
     GitUserProfile,
-    StrippedGitResponse,
+    ConfigDB,
+    UFileInfo,
 } from "./types";
 import toml from "toml";
 import { exec } from "node:child_process";
 import util from "node:util";
 import { GitAPIManager } from "./api/gitapi";
+import { IGNORED_DIRS, IGNORED_FILES_AND_EXTS } from "./misc/constants";
 const execAsync = util.promisify(exec);
 
 export const isBun = typeof Bun != undefined;
 
+// For now, we have to use the .. to step back one dir, but in prod we have to remove this, else, everything fails.
 export const projectRootDir = path.resolve(
     import.meta.dir ?? import.meta.dirname,
     "..",
 );
-export const projectRootSrcDir = path.resolve(
-    import.meta.dir ?? import.meta.dirname,
-);
-export const doxieOutputDir = path.join(projectRootSrcDir, ".doxie/");
+export const configRootDir = path.resolve(projectRootDir, ".blinkdoc/");
+export const configDBFile = path.resolve(configRootDir, "cdb.json");
+export const DEFAULT_CONFIG_FILE: ConfigDB = {
+    isVCS: false,
+    isLicensed: false,
+    filePaths: { gitignore: "", license: "" },
+    build_scripts: {
+        node: { exists: false },
+        rust: { exists: false },
+        zig: { exists: false },
+    },
+};
 
 export async function isHardDetectBinFiles(filePath: string): Promise<boolean> {
     try {
@@ -41,7 +52,8 @@ export function getFileExtension(fileName: string): string {
 }
 
 export async function generateFlattenedFileText(files: FileInfo[]) {
-    const outdir = path.resolve(doxieOutputDir, "flatten.md");
+    // Would have to export this to other file types as well.
+    const outdir = path.resolve(configRootDir, "flatten.md");
     const res = [];
     for (const file of files) {
         res.push(
@@ -168,4 +180,93 @@ export async function getGitRepoDetails(): Promise<GitRepoProfile | undefined> {
 
     const GitAPI = new GitAPIManager(urlString);
     console.log(await GitAPI.getRepoInfo());
+}
+
+export async function getFileFromGitRepo(
+    repo: string,
+    file: string,
+): Promise<string | undefined> {
+    const fetchUrl = async function(url: string) {
+        return fetch(url)
+            .then((r) => {
+                // I mean, if this should be the case then it's the github 404 error, so the file is most likely not found.
+                if (!r.ok) throw new Error(undefined);
+                return r.text();
+            })
+            .then((text) => {
+                if (text.trim.length) {
+                    // Most likely an invalid file or whatsoever i don't really know i can't say for sure.
+                    return Promise.reject(undefined);
+                }
+                return text;
+            });
+    };
+
+    const parsedRepoMain = `https://raw.githubusercontent.com/${parseGitRepoUrl(repo)}/master/${file}`;
+    const parsedRepoMaster = `https://raw.githubusercontent.com/${parseGitRepoUrl(repo)}/master/${file}`;
+
+    // My little hack to try getting results from both branches, just to make sure either of them exists.
+    const res = await Promise.any([
+        fetchUrl(parsedRepoMain),
+        fetchUrl(parsedRepoMaster),
+    ]);
+
+    return res;
+}
+
+export async function saveConfigDbFile(config: ConfigDB): Promise<void> {
+    await fs.mkdir(configRootDir, { recursive: true });
+    return await fs.writeFile(configDBFile, JSON.stringify(config, null, 2));
+}
+
+export async function loadConfigDbFile(): Promise<ConfigDB> {
+    if (!(await fs.exists(configDBFile)))
+        await saveConfigDbFile(DEFAULT_CONFIG_FILE);
+    return JSON.parse(await fs.readFile(configDBFile, { encoding: "utf-8" }));
+}
+
+export async function isGitVersioned(): Promise<boolean> {
+    return (await loadConfigDbFile()).isVCS;
+}
+
+export async function filterFilesAndDir(
+    files: UFileInfo[],
+): Promise<FileInfo[]> {
+    const config = await loadConfigDbFile();
+    const nodes: string[] = [...IGNORED_FILES_AND_EXTS];
+    const dirs: string[] = [...IGNORED_DIRS];
+
+    // Trying to parse .gitignore, would improve on this later.
+    if (config.filePaths.gitignore.length > 1) {
+        try {
+            const contents = await fs.readFile(config.filePaths.gitignore, {
+                encoding: "utf-8",
+            });
+
+            for (const c of contents.split("\n")) {
+                const cPath = path.join(projectRootDir, c);
+                const t = await fs.stat(cPath);
+                if (t.isDirectory()) {
+                    dirs.push(c);
+                } else if (t.isFile()) {
+                    nodes.push(c);
+                }
+            }
+        } catch (_) { }
+    }
+
+    const res: FileInfo[] = [];
+    for (const file of files) {
+        if (file.type === "dir") {
+            if (!dirs.includes(file.name)) {
+                await filterFilesAndDir(file.contents);
+                continue;
+            }
+        }
+        if (!nodes.includes(file.name)) {
+            res.push(file as FileInfo);
+        }
+    }
+
+    return res;
 }

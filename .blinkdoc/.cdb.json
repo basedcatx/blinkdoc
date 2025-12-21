@@ -1,0 +1,15 @@
+{
+  "isVCS": true,
+  "configs": {
+    "node": {
+      "exists": true,
+      "path": "/home/basedcatx/stuff/js/blinkdoc/package.json"
+    },
+    "rust": {
+      "exists": false
+    },
+    "zig": {
+      "exists": false
+    }
+  }
+}

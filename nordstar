@@ -1,0 +1,26 @@
+How the init function should look like:
+1. Check if git exists, then it should try to setup git for the user, by giving them steps to follow and set up their project. (We can even suggest project names in future). If git already exists we go further to check if any git remote exists, if it does, we extract the git details, look for any license, analyse the readme.
+
+2. If no license exists, we can ask the user if they would like to include a license in their project? then we can just fetch all the available licenses and their descriptions and let the user choose any he feels it's good enough (inshort i feel like this is super worth it)
+
+3. Ask the user if he would appreciate people's contributions to his code. If yes we would ask him to lay out a simple message he would 
+want people to know inorder to contribute to his work, just a description and we would handle the rest. He could provide a short description or link to a github repo with a CONTRIBUTIONS template, we could just fetch and use
+
+4. Ask the user if they want to provide their own api keys, like a gemini, gpt or claude api key, else they would have to use ours.
+
+5. Ask the user if there is any particular github template they were interested in (github link)
+
+To keep it simple we would work on this first.
+Under the hood we would do everything we have to do progressively while prompting the user on the progress. at the end we would show the a small terms and conditions and also an assurance that we do not read or process any hidden files, and that they must explicitly add it.
+
+@basedcatx/@theogx
+
+first let's optimize our code a little bit to make some querying pretty easy. 
+First we need a .blinkdoc directory in the project's root, in it we have a .cdb.json this would be like our config database that would hold a lot of already queried information like if git exists, path to some key files and folders
+
+Don't forget to add .blinkdoc to .env
+
+
+
+#Init...
+First let's enumerate all the files in our directory, we need to find all the config files, and then then write them to our .cdb, then we need to filter our files and folders.

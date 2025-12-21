@@ -1,56 +1,45 @@
 import path from "path";
 import fs from "node:fs/promises";
 import {
+    filterFilesAndDir,
     findAndAddFws,
     getFileExtension,
     isHardDetectBinFiles,
     projectRootDir,
-    projectRootSrcDir,
 } from "../utility";
-import type { FileInfo, ProjectProfile } from "../types";
-import {
-    IGNORED_DIRS,
-    IGNORED_FILE_EXTS,
-    PROJECT_RUNTIMES,
-    RUNTIMES,
-} from "../misc/constants";
+import type { FileInfo, ProjectProfile, UFileInfo } from "../types";
+import { PROJECT_RUNTIMES, RUNTIMES } from "../misc/constants";
 
+// We would have to separate filtering from enumeration.
 export async function findAllFilesInProjectDir(
     projectdir: string = projectRootDir,
-    { withContent = true }: { withContent: boolean },
-): Promise<FileInfo[]> {
-    const dirs = await fs.readdir(
-        projectdir || projectRootSrcDir || projectRootDir,
-        {
-            withFileTypes: true,
-        },
-    );
-    const files: FileInfo[] = [];
+    withContent: boolean = true,
+): Promise<UFileInfo[]> {
+    const dirs = await fs.readdir(projectdir || projectRootDir, {
+        withFileTypes: true,
+    });
+    const files: UFileInfo[] = [];
 
     for (const content of dirs) {
         const { parentPath, name } = content;
+
+        if (content.isSymbolicLink()) continue;
         if (content.isDirectory()) {
-            if (IGNORED_DIRS.includes(name as any)) {
-                continue;
-            }
-            files.push(
-                ...(await findAllFilesInProjectDir(path.resolve(parentPath, name), {
-                    withContent: true,
-                })),
-            );
+            files.push({
+                type: "dir",
+                contents: await findAllFilesInProjectDir(
+                    path.resolve(parentPath, name),
+                    withContent,
+                ),
+                name: content.name,
+                path: content.parentPath,
+            });
             continue;
         }
 
-        if (content.isSymbolicLink()) continue;
-
         if (content.isFile()) {
             const extension = getFileExtension(name);
-            if (
-                IGNORED_FILE_EXTS.includes(extension as any) ||
-                IGNORED_FILE_EXTS.includes(name as any)
-            ) {
-                continue;
-            }
+
             if (
                 await isHardDetectBinFiles(
                     path.resolve(content.parentPath, content.name),
@@ -62,6 +51,7 @@ export async function findAllFilesInProjectDir(
             // For now we would leave out the opts field, would do some mapping later on and add more context. We need to also do framework detection.
             //
             files.push({
+                type: "file",
                 path: path.resolve(content.parentPath, content.name),
                 relativePath: path.resolve(content.name),
                 ext: extension,
@@ -86,11 +76,12 @@ export async function findAllFilesInProjectDir(
 }
 
 export async function detectProjectFramework(
-    projectdir: string = projectRootSrcDir,
+    projectdir: string = projectRootDir,
 ) {
-    const files: FileInfo[] = await findAllFilesInProjectDir(projectdir, {
-        withContent: false,
-    });
+    //REQUIRES: filtering
+    const files: FileInfo[] = await filterFilesAndDir(
+        await findAllFilesInProjectDir(projectdir, false),
+    );
 
     const profiles: ProjectProfile[] = [];
     const runtimes = PROJECT_RUNTIMES.map((rt) => {
@@ -154,5 +145,6 @@ export async function detectProjectFramework(
         });
     });
 
-    console.log(profiles);
+    console.log(files)
+    console.log(files.find((f) => f.name === ".env"));
 }

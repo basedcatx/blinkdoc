@@ -1,0 +1,17 @@
+{
+  "isVCS": false,
+  "filePaths": {
+    "gitignore": ""
+  },
+  "build_scripts": {
+    "node": {
+      "exists": false
+    },
+    "rust": {
+      "exists": false
+    },
+    "zig": {
+      "exists": false
+    }
+  }
+}

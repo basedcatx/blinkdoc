@@ -16,7 +16,7 @@ export enum RUNTIMES {
     Kubernetes = "Kubernetes",
 }
 
-export const IGNORED_FILE_EXTS = [
+export const IGNORED_FILES_AND_EXTS = [
     "exe",
     "mp4",
     "iso",
