@@ -1,11 +1,14 @@
 {
-  "isVCS": false,
+  "isVCS": true,
+  "isLicensed": false,
   "filePaths": {
-    "gitignore": ""
+    "gitignore": "/home/basedcatx/stuff/js/blinkdoc/.gitignore",
+    "license": ""
   },
   "build_scripts": {
     "node": {
-      "exists": false
+      "exists": true,
+      "path": "/home/basedcatx/stuff/js/blinkdoc/package.json"
     },
     "rust": {
       "exists": false
