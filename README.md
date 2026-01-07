@@ -1,5 +1,3 @@
-# doxie
-
 To install dependencies:
 
 ```bash
