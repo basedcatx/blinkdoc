@@ -73,7 +73,8 @@ cmds.command("init").action(async function () {
     {
       title: "Initializing workspace",
       task: async function () {
-        await init();
+        // await init();
+          await setupLicense()
         return COLOR_INFO("Workspace is initialized");
       },
     },
@@ -129,14 +130,17 @@ async function setupLicense(): Promise<void> {
       {
         title: COLOR_INFO("Fetching all available license"),
         task: async function () {
-          licenses = await fetch("https://api.github.com/licenses").then(
-            function (res) {
-              if (!res.ok) {
-                return null;
-              }
-              return res.json();
-            },
-          );
+          licenses = (await Promise.allSettled(
+            await fetch("https://api.github.com/licenses")
+              .then((res) => {
+                if (!res.ok) return null;
+                return res.json();
+              })
+              .then((licenses: any) =>
+                licenses.map((license: any) => fetch(license.url)),
+              ),
+          )).filter((res: any) => res.status == "fullfilled").map((res: any) => res.value);
+
           return licenses
             ? COLOR_INFO("Fetching completed.")
             : COLOR_ERROR("Error occurred fetching licenses");

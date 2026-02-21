@@ -1,7 +1,7 @@
 import path from "path";
 import { tmpdir } from "os";
 import fs from "fs/promises";
-import nodefs, { unlinkSync } from "node:fs";
+import nodefs from "node:fs";
 import { spawn, exec } from "child_process";
 import readline from "readline";
 
@@ -17,8 +17,6 @@ import toml from "toml";
 import util from "node:util";
 import { GitAPIManager } from "./api/gitapi";
 import { IGNORED_DIRS, IGNORED_FILES_AND_EXTS } from "./misc/constants";
-import { globalConfig } from "zod/v4/core";
-import cmds from "./misc/cli";
 const execAsync = util.promisify(exec);
 
 export const isBun = typeof Bun != undefined;
@@ -282,9 +280,9 @@ export async function filterFilesAndDir(
   return res;
 }
 
-export async function getLongMessage(comments?: string) {
-  const tempFileDir = path.join(tmpdir(), `blinkdoc-${Date.now()}.txt`);
-  await fs.writeFile(tempFileDir, comments || "");
+export async function getLongMessage(comments: string = "", asArray: boolean = false) {
+  const tempFileDir = path.join(tmpdir(), `blinkdoc-temp.txt`);
+  await fs.writeFile(tempFileDir, comments);
   let editor = process.env.EDITOR! || "nano";
 
   return new Promise((resolve) => {
@@ -297,6 +295,7 @@ export async function getLongMessage(comments?: string) {
         input: fileStream,
         crlfDelay: Infinity,
       });
+
       const result: string[] = [];
 
       for await (const line of rl) {
@@ -304,10 +303,9 @@ export async function getLongMessage(comments?: string) {
         result.push(line);
       }
 
-      unlinkSync(tempFileDir);
-      return resolve(result.join("\n"))
+      await fs.unlink(tempFileDir);
+      return asArray ? resolve(result) : resolve(result.join("\n"))
     });
   });
 }
 
-console.log(await getLongMessage("Uhm I should see this"));
