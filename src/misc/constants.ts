@@ -10,6 +10,12 @@ export const COLOR_INFO = chalk.blue;
 export const COLOR_HOLDER = chalk.dim.gray;
 export const COLOR_WARNING = chalk.yellow;
 
+export const CONTRIB_INSTRUCTION = `
+# Uncomment the name of your desired license by removing the '#' before it.
+# You shouldn't select more than one license, and make sure you uncomment just the name
+# Due to github's limitation, you might face rate limits, you can just try later.
+`;
+
 import chalk from "chalk";
 import { type RuntimeType } from "../types";
 export enum RUNTIMES {

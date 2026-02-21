@@ -74,7 +74,7 @@ cmds.command("init").action(async function () {
       title: "Initializing workspace",
       task: async function () {
         // await init();
-          await setupLicense()
+        await setupLicense();
         return COLOR_INFO("Workspace is initialized");
       },
     },
@@ -116,7 +116,7 @@ cmds.command("init").action(async function () {
   console.log("Is git found " + (await isGitVersioned()), projName);
 });
 
-cmds.parseAsync(process.argv);
+//cmds.parseAsync(process.argv);
 
 // command functions
 //
@@ -125,21 +125,28 @@ async function setupLicense(): Promise<void> {
   let confirmed = false;
   while (!confirmed) {
     // This could be further optimized by caching the values from the api searches to an earlier scope, but for now it is redundant
+    // TODO: Account for ratelimiting when fetching all licenses.
     let licenses: any;
     await clk.tasks([
       {
         title: COLOR_INFO("Fetching all available license"),
         task: async function () {
-          licenses = (await Promise.allSettled(
-            await fetch("https://api.github.com/licenses")
-              .then((res) => {
-                if (!res.ok) return null;
-                return res.json();
-              })
-              .then((licenses: any) =>
-                licenses.map((license: any) => fetch(license.url)),
-              ),
-          )).filter((res: any) => res.status == "fullfilled").map((res: any) => res.value);
+          licenses = (
+            await Promise.allSettled(
+              await fetch("https://api.github.com/licenses")
+                .then((res) => {
+                  if (!res.ok) return null;
+                  return res.json();
+                })
+                .then((licenses: any) =>
+                  licenses.map((license: any) =>
+                    fetch(license.url).then((r) => r.json()),
+                  ),
+                ),
+            )
+          )
+            .filter((r) => r.status === "fulfilled")
+            .map((r) => r.value);
 
           return licenses
             ? COLOR_INFO("Fetching completed.")
@@ -148,59 +155,17 @@ async function setupLicense(): Promise<void> {
       },
     ]);
 
-    const choice = await clk.select({
-      message: "Please choose the appropriate license for your project",
-      options: Object.keys(licenses).map((key) => {
-        return {
-          value: licenses[key].key,
-          label: COLOR_INFO(licenses[key].name),
-        };
-      }),
-    });
-
-    let details: any;
-    await clk.tasks([
-      {
-        title: COLOR_INFO("Fetching license details"),
-        task: async function () {
-          details = await fetch(
-            `https://api.github.com/licenses/${choice}`,
-          ).then((res) => {
-            if (!res.ok) {
-              return null;
-            }
-            return res.json();
-          });
-
-          return details
-            ? COLOR_INFO("Fetching completed.")
-            : COLOR_ERROR("Error occurred fetching licenses");
-        },
-      },
-    ]);
-
-    if (!details) {
-      confirmed = true;
-      return clk.note("An error occurred please try again");
-    } else {
-      clk.note(COLOR_INFO(details.description), COLOR_SUCCESS(details.name));
-
-      const r = (await clk.confirm({
-        message: "Do you wish to proceed with this license?",
-        initialValue: true,
-      })) as boolean;
-
-      if (!r) {
-        confirmed = (await clk.confirm({
-          message: "Do you want to skip licensing?",
-          initialValue: false,
-        })) as boolean;
-      } else {
-        confirmed = r;
-      }
-    }
+    return (
+      licenses
+        //@ts-ignore
+        .map(({ key, name, description }) => {
+          return `#key: ${key}\n#name: ${name}\n#description: ${description}`;
+        })
+        .join("\n\n")
+    );
   }
 }
 
+console.log(await setupLicense());
 // TODO
 async function setupGit(): Promise<void> {}
