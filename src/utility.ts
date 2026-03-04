@@ -11,6 +11,7 @@ import type {
   GitUserProfile,
   ConfigDB,
   UFileInfo,
+  RBoolean,
 } from "./types";
 
 import toml from "toml";
@@ -29,6 +30,8 @@ export const projectRootDir = path.resolve(
 
 export const configRootDir = path.resolve(projectRootDir, ".blinkdoc/");
 export const configDBFile = path.resolve(configRootDir, "cdb.json");
+export const cacheLicenseFile = path.resolve(configRootDir, "licenses.json");
+
 export const DEFAULT_CONFIG_FILE: ConfigDB = {
   isVCS: false,
   isLicensed: false,
@@ -225,9 +228,51 @@ export async function saveConfigDbFile(config: ConfigDB): Promise<void> {
 }
 
 export async function loadConfigDbFile(): Promise<ConfigDB> {
-  if (!(await fs.exists(configDBFile)))
+  if (!(await fs.statfs(configDBFile)))
     await saveConfigDbFile(DEFAULT_CONFIG_FILE);
   return JSON.parse(await fs.readFile(configDBFile, { encoding: "utf-8" }));
+}
+
+export async function cacheLicenses(license: any): Promise<void> {
+  await fs.mkdir(configRootDir, { recursive: true });
+  return await fs.writeFile(cacheLicenseFile, JSON.stringify(license, null, 2));
+}
+
+export async function loadCachedLicenses(): Promise<any | []> {
+  try {
+    await fs.access(cacheLicenseFile);
+
+    const res = JSON.parse(
+      await fs.readFile(cacheLicenseFile, { encoding: "utf-8" }),
+    );
+
+    if (!res || res.length < 1) {
+      await fs.unlink(cacheLicenseFile);
+      throw new Error("Invalid license cached file");
+    }
+
+    return res;
+  } catch (err) {
+    if (!(await fetchLicenses()).ok) {
+      await cacheLicenses([]);
+    }
+  }
+  return [];
+}
+
+export async function fetchLicenses(): Promise<RBoolean> {
+  return await new Promise(async (resolve, reject) => {
+    const licenses = await fetch("https://api.github.com/licenses")
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch licenses");
+        }
+        return res.json();
+      })
+      .catch((err) => reject({ ok: false, error: err }));
+    await cacheLicenses(licenses);
+    resolve({ ok: true, value: await licenses });
+  });
 }
 
 export async function isGitVersioned(): Promise<boolean> {
@@ -280,13 +325,18 @@ export async function filterFilesAndDir(
   return res;
 }
 
-export async function getLongMessage(comments: string = "", asArray: boolean = false) {
+export async function getLongMessage(
+  comments: string = "",
+  asArray: boolean = false,
+) {
   const tempFileDir = path.join(tmpdir(), `blinkdoc-temp.txt`);
   await fs.writeFile(tempFileDir, comments);
   let editor = process.env.EDITOR! || "nano";
 
-  return new Promise((resolve) => {
-    const child = spawn(editor, [tempFileDir], { stdio: "inherit" });
+  return await new Promise((resolve) => {
+    const child = spawn(editor, [tempFileDir], {
+      stdio: "inherit",
+    });
 
     child.on("close", async () => {
       const fileStream = nodefs.createReadStream(tempFileDir);
@@ -304,8 +354,7 @@ export async function getLongMessage(comments: string = "", asArray: boolean = f
       }
 
       await fs.unlink(tempFileDir);
-      return asArray ? resolve(result) : resolve(result.join("\n"))
+      return asArray ? resolve(result) : resolve(result.join("\n"));
     });
   });
 }
-

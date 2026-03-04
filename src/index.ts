@@ -3,12 +3,15 @@ import {
   COLOR_ERROR,
   COLOR_INFO,
   COLOR_QUESTION,
-  COLOR_SUCCESS,
 } from "./misc/constants";
 import {
+  cacheLicenses,
   DEFAULT_CONFIG_FILE,
+  fetchLicenses,
+  getLongMessage,
   isGitVersioned,
   isLicensed,
+  loadCachedLicenses,
   projectRootDir,
   saveConfigDbFile,
 } from "./utility";
@@ -66,19 +69,10 @@ async function init() {
 // "README.md",
 // );
 
-cmds.command("init").action(async function () {
+cmds.command("setup").action(async function () {
   clk.intro(COLOR_QUESTION(_NAME));
 
-  await clk.tasks([
-    {
-      title: "Initializing workspace",
-      task: async function () {
-        // await init();
-        await setupLicense();
-        return COLOR_INFO("Workspace is initialized");
-      },
-    },
-  ]);
+  await setupLicense();
 
   // TODO: Change this back to !(..)
   if (await isGitVersioned()) {
@@ -126,46 +120,42 @@ async function setupLicense(): Promise<void> {
   while (!confirmed) {
     // This could be further optimized by caching the values from the api searches to an earlier scope, but for now it is redundant
     // TODO: Account for ratelimiting when fetching all licenses.
-    let licenses: any;
-    await clk.tasks([
-      {
-        title: COLOR_INFO("Fetching all available license"),
-        task: async function () {
-          licenses = (
-            await Promise.allSettled(
-              await fetch("https://api.github.com/licenses")
-                .then((res) => {
-                  if (!res.ok) return null;
-                  return res.json();
-                })
-                .then((licenses: any) =>
-                  licenses.map((license: any) =>
-                    fetch(license.url).then((r) => r.json()),
-                  ),
-                ),
-            )
-          )
-            .filter((r) => r.status === "fulfilled")
-            .map((r) => r.value);
+    const sp = clk.spinner();
 
-          return licenses
-            ? COLOR_INFO("Fetching completed.")
-            : COLOR_ERROR("Error occurred fetching licenses");
-        },
-      },
-    ]);
-
-    return (
-      licenses
-        //@ts-ignore
-        .map(({ key, name, description }) => {
+    sp.start(COLOR_INFO("Fetching all available/cached licenses"));
+    const licenses = await loadCachedLicenses();
+    sp.message(COLOR_INFO("License succesfully fetched"));
+    sp.stop();
+    const comment = licenses
+      .map(
+        ({
+          key,
+          name,
+          description,
+        }: {
+          key: string;
+          name: string;
+          description: string;
+        }) => {
+          //@ts-ignore
           return `#key: ${key}\n#name: ${name}\n#description: ${description}`;
-        })
-        .join("\n\n")
-    );
+        },
+      )
+      .join("\n\n");
+
+    const result = await getLongMessage(comment, true);
+    // would validate this later
+    if (result) {
+      clk.note("Please unselect just one license");
+      continue;
+    }
+
+    sp.stop("Done setting up license");
+    confirmed = true;
   }
 }
 
-console.log(await setupLicense());
 // TODO
 async function setupGit(): Promise<void> {}
+
+await setupLicense();
